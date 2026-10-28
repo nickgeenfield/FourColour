@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	version    = "1.5.1"
+	version    = "1.5.2"
 	appName    = "FourColour"
 	appID      = "rm-comics"
 	defaultIP  = "10.11.99.1"

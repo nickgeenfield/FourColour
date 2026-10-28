@@ -17,7 +17,7 @@ Rectangle {
     property bool busy: false
     property bool showBar: false
     property bool showSlider: false
-    property string version: "v1.5"
+    property string version: "v1.5.2"
     property string status: "Loading…"
     property int listTries: 0
     property var pendingDelete: null   // {name, path} while the confirmation is showing

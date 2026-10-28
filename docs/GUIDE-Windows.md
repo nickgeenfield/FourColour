@@ -1,91 +1,65 @@
-# Installing the Comics reader (v1.5) from Windows 11
+# FourColour on Windows
 
-You need: the tablet connected by USB cable and switched on, and your SSH password from the tablet's
-**Settings > General > About** (the same one you used for XOVI). When you type the password nothing appears
-on screen – that is normal. Press Enter when you have typed it.
+This is the Windows guide for FourColour 1.5.2, a comic-book reader for the reMarkable Paper Pro. Install it with `FourColour-Installer.exe` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page. The app runs under XOVI, inside AppLoad, under the name **FourColour**. On the tablet the folder is still `rm-comics` (`/home/root/xovi/exthome/appload/rm-comics/`).
 
-## 1. Unzip
-Right-click `rm_comics_v1.5.zip` > **Extract All…** and extract it to `C:\`. You should then have `C:\rm_comics\install.sh`.
+## What you need
 
-## 2. Copy it to the tablet
-Open **PowerShell** from the Start menu and type:
+- A reMarkable Paper Pro, with developer mode on.
+- [XOVI](https://github.com/asivery/rm-xovi-extensions) and [AppLoad](https://github.com/asivery/rm-appload), already installed and working.
+- A Windows 10 or Windows 11 PC on the same Wi-Fi network as the tablet. Over USB the address is `10.11.99.1`, which is what the installer suggests.
+
+## Install or update
+
+1. Download `FourColour_v1.5.2_installer.zip` from [Releases](https://github.com/nickgeenfield/FourColour/releases) and extract it. The program is `FourColour-Installer.exe`. A short `README.txt` sits beside it.
+2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**. The executable is unsigned.
+3. On the tablet, switch on Wi-Fi and unlock the device. Close FourColour if it is already open. A USB cable works as well.
+4. Find the tablet's IP address under **Settings > General > Help > About**.
+5. The SSH user is `root`. The password is under **Settings > General > Help > About > Copyrights and licenses** (scroll down). The menu item is labelled "Copyrights and licenses" on the device. Developer mode is required. The password is case-sensitive and can change after a software update.
+6. Run `FourColour-Installer.exe`. Enter the IP address (or press Enter to keep `10.11.99.1`), the user `root`, and the password. The password is not shown as you type.
+7. Choose **1** to install or update. **2** uninstalls. **3** (or `q`) quits and changes nothing.
+8. When the installer reports success, it stops. Restart the UI with mods, for example with reManager, or open AppLoad and tap **Reload**. The installer does not restart the UI itself.
+9. Open AppLoad and tap **FourColour**. The library title bar shows **v1.5.2** in small grey text.
+
+Install and update copy `manifest.json`, `resources.rcc`, `icon.png` and `backend/entry` into `/home/root/xovi/exthome/appload/rm-comics/`. They create `/home/root/comics` if it is missing, and they run `backend/entry --selftest`, which prints `ok`. Comics and saved pages stay where they are.
+
+The installer accepts the tablet's current SSH host key on each run, because that key changes when the tablet's software is updated. Run it on a network you trust.
+
+## Adding comics
+
+Comics go in `/home/root/comics/` on the tablet. Sub-folders are kept, so a series can have its own folder. From the PC:
+
+```bat
+scp -r C:\Comics\* root@TABLET_IP:/home/root/comics/
 ```
-scp -r C:\rm_comics root@10.11.99.1:/home/root/
-```
 
-## 3. Install it
-```
-ssh root@10.11.99.1 "sh /home/root/rm_comics/install.sh"
-```
-It should finish with "Installed to /home/root/xovi/exthome/appload/rm-comics". If it says ERROR, nothing has
-been changed.
+Use the IP from **Settings > General > Help > About**, or `10.11.99.1` over USB. `scp` asks for the tablet password. WinSCP (SFTP, user `root`) can drag the files across instead.
 
-## 4. Copy comics to the tablet
-To try the two test comics first:
-```
-scp C:\rm_comics\sample\* root@10.11.99.1:/home/root/comics/
-```
-For your own comics, put them in a folder on your PC, for example `C:\Comics`, then:
-```
-scp -r C:\Comics\* root@10.11.99.1:/home/root/comics/
-```
-Sub-folders are kept, so you can organise them by series. File names with spaces are fine.
-(reManager's file browser can also drag files into `/home/root/comics` if you prefer.)
+The library lists `.cbz`, `.zip`, `.cbr` and `.rar`. Pages inside the archive are JPEG, PNG, GIF, BMP or WebP. Names that start with a dot are skipped. How to turn pages, jump with the slider, and delete a comic is in the [README](../README.md).
 
-## 5. Open it
-Open the AppLoad menu on the tablet and tap **Comics**. If it is not there yet:
-- in **reManager**, use the option to **rebuild/restart** XOVI (the same "Restart xochitl with XOVI" step you
-  used after installing other mods), **or**
-- in PowerShell: `ssh root@10.11.99.1 "/home/root/xovi/start"`
+## The update script
 
-The screen goes blank for up to a minute while it restarts. No hashtab rebuild is needed – this app does not
-change any of the tablet's own screens.
+`scripts/update_rm_comics.bat` copies an already built app onto the tablet over USB. It does not copy comics into `/home/root/comics/`.
 
-## Using it
-- Tap a comic to open it. Right third of the page = next page, left third = previous page. Swiping left or right
-  turns the page anywhere on the screen. Tapping the middle of the page does nothing (changed in v1.5).
-- Tap the **top strip** of the page (roughly the top eighth) for **Library**, the page number, the version (v1.5)
-  and **Exit**. This used to be a tap in the middle; it moved to the top in v1.5 so it is not confused with swipes.
-- Tap the bottom strip of the page for the page slider. Drag to preview the page number; release to jump there.
-- While either bar is showing, tap anywhere else on the page to hide it.
-- Drag up or down in the library to scroll the list.
-- **Deleting a comic** – two ways, both in the library:
-  - **Delete button (added in v1.4):** tap the **Delete** button at the right-hand end of a comic's row.
-  - **Long press:** press and hold a comic's name for about a second. From v1.4 a slight wobble of your finger or
-    pen no longer cancels it; only lifting off, or moving more than a small distance (which scrolls instead), does.
-  A large box asks "Delete <name>?". Tap **Delete** to remove it, or **Cancel** (or anywhere outside the box) to keep it.
-  The comic's saved page is forgotten too and the list refreshes. This cannot be undone. Folders have no Delete
-  button and holding a folder does nothing; delete folders with WinSCP.
+Close FourColour and plug the tablet in. The script looks for `app\resources.rcc` and `app\backend\entry` in the folder it sits in, or in `C:\rm_comics\app`. It copies those two files to `root@10.11.99.1`, moves them into `/home/root/xovi/exthome/appload/rm-comics/`, marks `backend\entry` executable, and runs `--selftest`. It asks for the SSH password twice. The password is not shown. It does not copy `manifest.json` or `icon.png`, and it does not restart the UI. Its window still says "Comics", the earlier name.
 
-## Updating from an earlier version (e.g. v1.4 to v1.5)
-### The easy way: update_rm_comics.bat
-1. Extract `rm_comics_v1.5.zip` to `C:\` (overwrite the old files), so the script is at `C:\rm_comics\update_rm_comics.bat`.
-2. Close Comics on the tablet and plug the tablet in by USB.
-3. Double-click `update_rm_comics.bat`. It asks for the tablet's SSH password twice. It copies the two app files
-   (`resources.rcc` and `backend\entry`) to the tablet, installs them, and checks that the helper prints `ok`.
-4. The script does **not** restart anything. When it says "Done", **restart the UI with mods in reManager** yourself
-   (closing and reopening the app is not enough). No hashtable rebuild is needed.
-5. Open Comics and look for "v1.5" in small grey text in the library title bar.
+When it says "Done", restart the UI with mods in reManager, or reload AppLoad, then check the library bar for **v1.5.2**.
 
-### By hand, if you prefer
-1. Close Comics, then stop its helper: `ssh root@10.11.99.1 "pkill -f rm-comics/backend/entry; true"`
-2. In WinSCP, drag `C:\rm_comics\app\resources.rcc` into `/home/root/xovi/exthome/appload/rm-comics/` and overwrite.
-3. Drag `C:\rm_comics\app\backend\entry` into `/home/root/xovi/exthome/appload/rm-comics/backend/` and overwrite.
-4. `ssh root@10.11.99.1 "chmod 755 /home/root/xovi/exthome/appload/rm-comics/backend/entry && /home/root/xovi/exthome/appload/rm-comics/backend/entry --selftest"` – it should print `ok`.
-5. Restart the UI with mods in reManager, then check for "v1.5".
+The usual update is the installer, option **1**. That also copies `manifest.json` and `icon.png`.
 
-## Removing it
-```
-ssh root@10.11.99.1 "sh /home/root/rm_comics/uninstall.sh"
-```
-This removes only the Comics app. Your comics and your other mods are not touched. Add ` --all` before the
-closing quote to forget saved page positions as well. Then restart with `/home/root/xovi/start` if the icon
-is still shown.
+## Uninstalling
 
-## If something goes wrong
-- "The reader's helper did not start": close the app and open it again; if it keeps happening, run
-  `ssh root@10.11.99.1 "/home/root/xovi/exthome/appload/rm-comics/backend/entry --selftest"` – it should print `ok`.
-- "Could not open: …": the message explains why (for example a password-protected RAR).
-- "Not deleted: …": the comic could not be deleted; the message explains why.
-- Pages appear in black and white or ghosted: tell me, as colour refresh inside AppLoad apps is the one thing
-  that could not be checked without the tablet.
+Run the installer and choose **2**. It asks before it removes the app. Comics in `/home/root/comics` are kept. A second question asks whether to delete saved page positions and the cache. The default for both questions is no. Then restart the UI with mods, or reload AppLoad, so the icon disappears.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| SmartScreen blocks the installer | **More info**, then **Run anyway**. |
+| "Couldn't reach the tablet" | Same Wi-Fi, or a USB cable. Tablet on and unlocked. IP from **Settings > General > Help > About**. Over USB the address is `10.11.99.1`. On Wi-Fi, SSH over Wi-Fi has to be switched on. |
+| "The tablet rejected the password (or username)." | User `root`. Password from the screen labelled "Copyrights and licenses", typed with the original case. It can change after a software update. |
+| "XOVI isn't installed" or "AppLoad isn't" | Install XOVI and AppLoad first. The installer leaves the tablet unchanged in that case. |
+| FourColour does not appear, or the UI looks old | AppLoad → **Reload**, or restart the UI with mods (for example via reManager). Closing and reopening the app is not enough after an update. |
+| "The reader's helper did not start" | Close the app and open it again. On the tablet, `/home/root/xovi/exthome/appload/rm-comics/backend/entry --selftest` should print `ok`. |
+| "Could not open: …" | The text after the colon is the reason. Examples from the reader: an archive that is not zip or RAR, a comic with no images, or a password-protected RAR. |
+| "Not deleted: …" | The file is still there. Only one comic file inside `/home/root/comics` can be removed. Folders are refused. |
+| Pages look black and white, or ghosted | The app draws the page image. It does not select a separate colour-refresh mode. |

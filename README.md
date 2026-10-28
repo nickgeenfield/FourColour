@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" alt="FourColour icon: a white-bordered square with a red panel across the top, a blue panel at the bottom left and a yellow panel at the bottom right" width="128" height="128">
 
-FourColour is Nick Greenfield's comic-book reader for the reMarkable Paper Pro (colour e-ink). It runs as an [AppLoad](https://github.com/asivery/rm-appload) app under [XOVI](https://github.com/asivery/rm-xovi-extensions). This repository is version 1.5.1. AppLoad shows the name **FourColour**. The app id, and the folder on the tablet, stay `rm-comics` (`/home/root/xovi/exthome/appload/rm-comics/`).
+FourColour is Nick Greenfield's comic-book reader for the reMarkable Paper Pro (colour e-ink). It runs as an [AppLoad](https://github.com/asivery/rm-appload) app under [XOVI](https://github.com/asivery/rm-xovi-extensions). This repository is version 1.5.2. AppLoad shows the name **FourColour**. The app id, and the folder on the tablet, stay `rm-comics` (`/home/root/xovi/exthome/appload/rm-comics/`). See [CHANGELOG.md](CHANGELOG.md).
 
 Comics live in `/home/root/comics/` on the tablet and are copied from a PC with `scp`. The screen is QML (`app/ui/main.qml`), packed into `resources.rcc` from `app/application.qrc`. A Rust program (`app/backend`) is installed as the static binary `backend/entry`: it lists the library, opens the archives and stores the page you were on. The Windows installer in `installer/` asks for the tablet's IP address and the `root` password. The password is masked as you type. The installer uploads the app over SSH, using SFTP when the tablet offers it. The executable is unsigned, so SmartScreen shows **More info**, then **Run anyway**. The installer leaves the UI restart to you: reload AppLoad, or restart the UI with mods (for example with reManager).
 
@@ -19,7 +19,7 @@ Comics live in `/home/root/comics/` on the tablet and are copied from a PC with 
 | ☑ | Delete | A **Delete** button on the row, or a press of about 0.8 seconds on the comic. A confirmation asks before the file is removed from the tablet. Folders have no delete. |
 | ☑ | One comic cached | Extracted pages sit in `/home/root/.cache/rm-comics`. Only the comic you opened last is kept. |
 
-The library title bar and the reader bar show the on-screen version **v1.5**. The installer reports **1.5.1**. With either bar open, a tap on the page hides it.
+The library title bar and the reader bar show **v1.5.2**. With either bar open, a tap on the page hides it.
 
 Saved pages are a JSON map at `/home/root/.local/share/rm-comics/progress.json`.
 
@@ -31,11 +31,11 @@ Saved pages are a JSON map at `/home/root/.local/share/rm-comics/progress.json`.
 
 ## Installation
 
-1. Download `FourColour_v1.5.1_installer.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it. The program is `FourColour-Installer.exe`. A short `README.txt` sits beside it.
+1. Download `FourColour_v1.5.2_installer.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it. The program is `FourColour-Installer.exe`. A short `README.txt` sits beside it.
 2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**.
 3. On the tablet, switch on Wi-Fi and unlock the device. Close FourColour if it is already open. With a USB cable you can leave the address at the installer's default, `10.11.99.1`.
 4. Find the tablet's IP address under **Settings > General > Help > About**.
-5. The SSH user is `root`. The password is under **Settings > General > Help > About > Copyrights and licences** (scroll down). Developer mode is required. The password is case-sensitive and can change after a software update.
+5. The SSH user is `root`. The password is under **Settings > General > Help > About > Copyrights and licenses** (scroll down). The menu item is labelled "Copyrights and licenses" on the device. Developer mode is required. The password is case-sensitive and can change after a software update.
 6. Run `FourColour-Installer.exe`. Enter the IP address, the user `root`, and the password. The password is not shown as you type.
 7. When the menu appears, choose:
    - **1** — Install or update FourColour
@@ -50,7 +50,7 @@ The installer accepts the tablet's current SSH host key on each run, because tha
 
 Option **3** (or `q`) changes nothing.
 
-An earlier manual procedure, copying files over USB and running `install.sh`, is written up in [docs/GUIDE-Windows.md](docs/GUIDE-Windows.md). That `install.sh` is not part of this repository. For 1.5.1, use the installer from Releases. The guide's notes on reading and deleting still match the app.
+The same steps, including the USB copy script, are written up in [docs/GUIDE-Windows.md](docs/GUIDE-Windows.md).
 
 ## Adding comics
 
@@ -62,9 +62,9 @@ From the PC (use the tablet's IP, or `10.11.99.1` over USB):
 scp -r /path/to/Comics/* root@TABLET_IP:/home/root/comics/
 ```
 
-`scp` asks for the tablet password. WinSCP (SFTP, user `root`) can drag the files across instead. [docs/GUIDE-Windows.md](docs/GUIDE-Windows.md) also notes that reManager's file browser can drop files into `/home/root/comics`.
+`scp` asks for the tablet password. WinSCP (SFTP, user `root`) can drag the files across instead. [docs/GUIDE-Windows.md](docs/GUIDE-Windows.md) has the Windows commands.
 
-`scripts/update_rm_comics.bat` updates the app over USB. It does not copy comics.
+`scripts/update_rm_comics.bat` copies a built `resources.rcc` and `backend\entry` to the tablet over USB. It does not copy comics.
 
 ### Formats the reader opens
 
@@ -101,9 +101,9 @@ If the helper is slow to start, the library asks again about every 1.5 seconds a
 
 Run the installer again and choose **1**. That replaces `manifest.json`, `resources.rcc`, `icon.png` and `backend/entry` under `/home/root/xovi/exthome/appload/rm-comics/`. Comics in `/home/root/comics` and saved pages in `/home/root/.local/share/rm-comics` are left alone. Then reload AppLoad, or restart the UI with mods. The installer does not do that restart.
 
-`scripts/update_rm_comics.bat` is the earlier USB updater. Close FourColour first and plug the tablet in. The script looks for `app\resources.rcc` and `app\backend\entry` next to itself, or in `C:\rm_comics\app`. It copies those two files to `root@10.11.99.1`, moves them into the AppLoad folder, marks `backend/entry` executable, and runs `--selftest`. It asks for the SSH password twice (once for `scp`, once for `ssh`); the password is not shown. It does not copy `manifest.json` or `icon.png`, and its on-screen text still says "Comics", which is the earlier name. When it says "Done", restart the UI with mods in reManager yourself.
+`scripts/update_rm_comics.bat` is the USB copy script. Close FourColour first and plug the tablet in. The script looks for `app\resources.rcc` and `app\backend\entry` next to itself, or in `C:\rm_comics\app`. It copies those two files to `root@10.11.99.1`, moves them into the AppLoad folder, marks `backend/entry` executable, and runs `--selftest`. It asks for the SSH password twice (once for `scp`, once for `ssh`); the password is not shown. It does not copy `manifest.json` or `icon.png`, and its on-screen text still says "Comics", which is the earlier name. When it says "Done", restart the UI with mods in reManager, or reload AppLoad.
 
-The bars in this version still read **v1.5**. A finished 1.5.1 install is the installer's line "FourColour 1.5.1 is installed.", and `--selftest` printing `ok`.
+A finished install prints "FourColour 1.5.2 is installed." The library bar shows **v1.5.2**. `--selftest` prints `ok`.
 
 ## Uninstalling
 
@@ -125,7 +125,7 @@ Restart the UI with mods (for example with reManager) so AppLoad drops the icon.
 | --- | --- |
 | SmartScreen blocks the installer | **More info**, then **Run anyway**. The executable is unsigned. |
 | "Couldn't reach the tablet" | Same Wi-Fi, or a USB cable. Tablet on and unlocked. IP from **Settings > General > Help > About**. Over USB the address is `10.11.99.1`. On Wi-Fi, SSH over Wi-Fi has to be switched on. The message includes the technical detail. |
-| "The tablet rejected the password (or username)." | User `root`. Password from **Copyrights and licences**, typed with the original case. It can change after a software update. |
+| "The tablet rejected the password (or username)." | User `root`. Password from the menu item labelled "Copyrights and licenses", typed with the original case. It can change after a software update. |
 | "XOVI isn't installed" or "AppLoad isn't" | Install XOVI and the AppLoad extension first. The installer does not change the tablet in that case. |
 | FourColour does not appear, or the UI looks old | Close the app, AppLoad → **Reload**, then open it again. If it is still missing, restart the UI with mods (for example via reManager). |
 | "The reader's helper did not start" | Close the app and open it again. On the tablet, `/home/root/xovi/exthome/appload/rm-comics/backend/entry --selftest` should print `ok`. |
