@@ -1,0 +1,8 @@
+{
+    "name": "FourColour",
+    "id": "rm-comics",
+    "loadsBackend": true,
+    "entry": "/ui/main.qml",
+    "supportsScaling": true,
+    "canHaveMultipleFrontends": false
+}

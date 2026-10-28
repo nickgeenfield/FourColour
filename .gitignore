@@ -1,0 +1,10 @@
+# Rust build output
+target/
+
+# Installer build products. Do not commit the Windows executable or release zips.
+*.exe
+*.zip
+
+# Built payload. See installer/payload/README.md.
+installer/payload/resources.rcc
+installer/payload/backend/
