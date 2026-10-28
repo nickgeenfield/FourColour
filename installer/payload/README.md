@@ -43,6 +43,8 @@ A musl static build avoids the glibc mismatch that a normal `aarch64-unknown-lin
 
 The `unrar` dependency compiles UnRAR from C++ sources (through `unrar_sys`), so the build needs a C++ compiler. A host `cargo check` uses the system compiler. The tablet command below is `cargo zigbuild`.
 
+If `c++` on `PATH` is Clang and the libc++ headers are not installed, `unrar_sys` passes `-stdlib=libc++` and the build stops with `<new>` not found. `CXX=g++ cargo check --locked` uses libstdc++ instead. Installing `libc++-dev` is the other fix. That is a host-check detail; it is not a change to the tablet target.
+
 Install a current Rust toolchain, [Zig](https://ziglang.org/download/), and [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild). From `app/backend`:
 
 ```sh

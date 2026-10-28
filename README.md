@@ -164,10 +164,10 @@ On a PC, check the Rust sources with:
 
 ```sh
 cd app/backend
-cargo check
+CXX=g++ cargo check --locked
 ```
 
-That is a host check. The binary you install is the `aarch64-unknown-linux-musl` build in the payload README. The `unrar` crate compiles C++ during that build.
+That is a host check. The binary you install is the `aarch64-unknown-linux-musl` build in the payload README. The `unrar` crate compiles C++ during that build. If `c++` is Clang without libc++ headers, `unrar_sys` asks for `-stdlib=libc++` and stops because `<new>` is missing. `CXX=g++` selects libstdc++. `libc++-dev` is the other fix.
 
 Two environment variables override paths when the backend is not running on the tablet. `RMCOMICS_HOME` defaults to `/home/root`. `RMCOMICS_COMICS` defaults to `$RMCOMICS_HOME/comics`. Saved pages go to `$RMCOMICS_HOME/.local/share/rm-comics/progress.json`. The extract cache is `$RMCOMICS_HOME/.cache/rm-comics`.
 
