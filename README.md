@@ -76,6 +76,71 @@ Zip and CBZ need stored files or deflate compression. In `app/backend/Cargo.toml
 
 If Qt on the tablet cannot decode a page, the reader shows "This page could not be shown (unsupported image type?)".
 
+## Wi-Fi uploads with Dropz
+
+[Dropz](https://github.com/nickgeenfield/FourColour/releases) is a small companion for FourColour. It runs a tiny HTTP server on the tablet (port **8080**) so you can send comics over Wi-Fi from a browser on a PC or phone, without SCP or a USB cable for day-to-day use. SSH is only needed to install or uninstall it.
+
+Dropz is MIT licensed, the same as FourColour. It has been tested on a reMarkable Paper Pro with firmware **3.28.0.172**, XOVI and AppLoad.
+
+### What Dropz does
+
+1. Starts a `dropz` systemd service on the tablet.
+2. On a device on the same Wi-Fi, open `http://<tablet-ip>:8080/`.
+3. Drag in one or more `.cbz`, `.cbr`, `.zip` or `.rar` files — or a zip that itself contains several comics.
+4. Uploads are queued and sent one at a time, each with a progress bar. A failed file is retried up to three times without stopping the rest.
+5. Files are saved into `/home/root/comics`. Existing names are **never overwritten**; a suffix such as ` (1)` is added instead.
+6. The page also lists the comics already on the tablet.
+
+PDF is rejected, because FourColour does not open PDF comics. An optional PIN can be set at install time (only a salted hash is kept on the tablet).
+
+### Install Dropz (Windows)
+
+1. Download `Dropz-1.0-Setup.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it. The program is `Dropz-1.0-Setup.exe`.
+2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**.
+3. Enter the tablet's Wi-Fi (or USB) IP, the user `root`, and the SSH password. The password is masked and is **never stored**.
+4. Choose **1** to install or update, or **2** to uninstall.
+5. Optionally set a PIN, and choose whether the service starts at boot.
+6. When it finishes, the installer prints the URL, offers to open Dropz in your default browser, and can leave a **Dropz.url** shortcut on the Desktop. It does **not** restart the reMarkable UI.
+
+Comics already in `/home/root/comics` are left alone. If an earlier install named ComicDrop is found, it is backed up and removed so only Dropz remains.
+
+### Manual install
+
+```sh
+scp -r dropz-1.0 root@TABLET_IP:/home/root/dropz-src
+ssh root@TABLET_IP
+sh /home/root/dropz-src/install.sh
+```
+
+### After install
+
+Open:
+
+```
+http://<tablet-wifi-ip>:8080/
+```
+
+Find the tablet's Wi-Fi address under **Settings > General > Help > About**, or use the address the installer printed. If new comics do not appear in FourColour straight away, close the app and open it again.
+
+### Turn Dropz off or on
+
+```sh
+ssh root@TABLET_IP "systemctl stop dropz && systemctl disable dropz"
+ssh root@TABLET_IP "systemctl enable --now dropz"
+```
+
+### Uninstall Dropz
+
+Use option **2** in the Windows installer, or:
+
+```sh
+sh /home/root/dropz/uninstall.sh
+```
+
+Your comics stay in `/home/root/comics`. The UI is not restarted.
+
+You can still copy comics with `scp` or WinSCP as before; Dropz is optional.
+
 ## Usage
 
 | To… | Do this |
