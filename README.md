@@ -122,6 +122,32 @@ http://<tablet-wifi-ip>:8080/
 
 Find the tablet's Wi-Fi address under **Settings > General > Help > About**, or use the address the installer printed. If new comics do not appear in FourColour straight away, close the app and open it again.
 
+### After an OS update or reinstall
+
+A reMarkable OS update or reinstall can remove Dropz's systemd startup registration and still leave `/home/root/dropz` and the comics in `/home/root/comics` on the tablet. The unit file is `/etc/systemd/system/dropz.service`. Automatic startup links that unit to `multi-user.target`, which systemd reaches when the tablet does a full boot. The registration sits apart from the Dropz files and from the comics. The steps below are the behaviour of the Dropz 1.0 `install.sh`, and they match one verified recovery. A later update can remove different files.
+
+`install.sh` is kept on the tablet at `/home/root/dropz/install.sh`. Root's home is `/home/root`, so that directory is `~/dropz`. The script is safe to run again from there. It creates `/home/root/dropz-backup-<YYYYMMDD-HHMMSS>/`. When `/home/root/dropz` is already present, that directory is archived inside the backup as `dropz.tar.gz`, and the unit and manifest are copied too when they are still on disk. The comics library is left out of the backup. Comics in `/home/root/comics` stay as they are. The script creates `/home/root/comics` only when that folder is missing. An existing PIN hash at `/home/root/dropz/pin.hash` stays in place.
+
+In the verified case, running the script and answering yes to automatic boot startup restored the service. SSH to the tablet as `root` and run:
+
+```sh
+cd ~/dropz && sh install.sh
+```
+
+If the firmware is outside the `3.28` series, the script prints a note that it was built with `3.28.x` in mind and waits. Press Enter to continue, or Ctrl-C to stop. The pause is a warning from this installer. It is not a test of the newer OS.
+
+The script then asks `Start Dropz automatically at boot? [Y/n]:`. Answer `yes`. The default shown on the prompt is yes: Enter, `y` and `yes` all enable startup. `n` and `no` leave the service disabled. With startup enabled, the script writes the unit again, runs `systemctl enable dropz.service`, and asks systemd to restart the service, or to start it if restart does not succeed.
+
+That start happens at once, so the page can be opened without rebooting the tablet. The installer does not restart the reMarkable UI. A UI restart — AppLoad **Reload**, or restarting the UI with mods — restarts the on-screen interface only. It does not restore the systemd unit. A full reboot is the tablet starting up again. On that boot, `multi-user.target` starts an enabled Dropz service.
+
+From a PC or phone on the same Wi-Fi, open port **8080** on the tablet's current Wi-Fi address:
+
+```
+http://<tablet-wifi-ip>:8080/
+```
+
+Read the address under **Settings > General > Help > About**, or use the address the script prints. The script reads that address from `wlan0` when the interface has one. After the tablet rejoins Wi-Fi, read the address again and use the one it has now.
+
 ### Turn Dropz off or on
 
 ```sh
