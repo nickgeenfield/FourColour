@@ -78,39 +78,50 @@ If Qt on the tablet cannot decode a page, the reader shows "This page could not 
 
 ## Wi-Fi uploads with Dropz
 
-[Dropz](https://github.com/nickgeenfield/FourColour/releases) is a small companion for FourColour. It runs a tiny HTTP server on the tablet (port **8080**) so you can send comics over Wi-Fi from a browser on a PC or phone, without SCP or a USB cable for day-to-day use. SSH is only needed to install or uninstall it.
+[Dropz](https://github.com/nickgeenfield/FourColour/releases) 1.1 is a small companion for FourColour. It runs a tiny HTTP server on the tablet (port **8080**) so you can send comics over Wi-Fi from a browser on a PC or phone, without SCP or a USB cable for day-to-day use. SSH is only needed to install or uninstall it.
 
-Dropz is MIT licensed, the same as FourColour. It has been tested on a reMarkable Paper Pro with firmware **3.28.0.172**, XOVI and AppLoad.
+Author: Nick Greenfield. Dropz is MIT licensed, the same as FourColour. It has been tested on a reMarkable Paper Pro with firmware **3.28.0.172**, with XOVI managed through reManager, and AppLoad.
+
+Dropz 1.0 installed `/etc/systemd/system/dropz.service`. On this firmware the `/etc` overlay is temporary, so a reboot removed the unit and Dropz stopped, while `/home/root/dropz` and the comics could still be there. Dropz 1.1 installs no systemd unit and does not remount the root filesystem or `/etc`. The server, the scripts and an optional XOVI post-start hook live under `/home/root`. An idempotent `/home/root/dropz/start.sh` starts the server. A background hook at `/home/root/xovi/scripts/post-start/90-dropz.sh` runs that helper whenever XOVI starts. The installer starts Dropz immediately and does not restart the reMarkable UI.
 
 ### What Dropz does
 
-1. Starts a `dropz` systemd service on the tablet.
+1. Listens on port **8080**. `/home/root/dropz/start.sh` starts one server and leaves an existing listener on that port alone. When XOVI starts, `/home/root/xovi/scripts/post-start/90-dropz.sh` runs the helper in the background and returns at once, so Dropz comes back with XOVI. That is automatic start after XOVI, which is separate from an unattended boot service.
 2. On a device on the same Wi-Fi, open `http://<tablet-ip>:8080/`.
 3. Drag in one or more `.cbz`, `.cbr`, `.zip` or `.rar` files — or a zip that itself contains several comics.
 4. Uploads are queued and sent one at a time, each with a progress bar. A failed file is retried up to three times without stopping the rest.
-5. Files are saved into `/home/root/comics`. Existing names are **never overwritten**; a suffix such as ` (1)` is added instead.
+5. Files are saved into `/home/root/comics`. Existing names are **never overwritten**; a suffix such as ` (1)` is added instead. The new file is created exclusively, so a name that appears at the same moment is not overwritten either.
 6. The page also lists the comics already on the tablet.
 
-PDF is rejected, because FourColour does not open PDF comics. An optional PIN can be set at install time (only a salted hash is kept on the tablet).
+PDF is rejected, because FourColour does not open PDF comics. An optional PIN can be set at install time. Only a salted hash is kept, at `/home/root/dropz/pin.hash`. An update keeps the hash that is already there.
 
 ### Install Dropz (Windows)
 
-1. Download `Dropz-1.0-Setup.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it. The program is `Dropz-1.0-Setup.exe`.
-2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**.
-3. Enter the tablet's Wi-Fi (or USB) IP, the user `root`, and the SSH password. The password is masked and is **never stored**.
-4. Choose **1** to install or update, or **2** to uninstall.
-5. Optionally set a PIN, and choose whether the service starts at boot.
-6. When it finishes, the installer prints the URL, offers to open Dropz in your default browser, and can leave a **Dropz.url** shortcut on the Desktop. It does **not** restart the reMarkable UI.
+Leave Dropz 1.0 installed and update it in place. Stop any upload that is in progress, and leave the tablet switched on and unlocked.
 
-Comics already in `/home/root/comics` are left alone. If an earlier install named ComicDrop is found, it is backed up and removed so only Dropz remains.
+1. Download `Dropz-1.1-Setup.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it into a new folder. The program is `Dropz-1.1-Setup.exe`.
+2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**.
+3. Enter the tablet's address. Over USB, press Enter to accept `10.11.99.1`. Over Wi-Fi, enter the address shown under **Settings > General > Help > About**. Press Enter to accept the user `root`, then type the SSH password. The password is masked and is **never stored**. It is under **Settings > General > Help > About > Copyrights and licenses**. The menu item is labelled "Copyrights and licenses" on the device.
+4. Choose **1** to install or update Dropz 1.1, or **2** to uninstall.
+5. At **Start Dropz automatically after XOVI starts in reManager?**, press Enter for **Yes**.
+6. At **Set an optional PIN?**, choose **No** to keep an existing PIN unchanged. Choose **Yes** only to set or replace it.
+7. Wait until the installer reports **Dropz 1.1 health check passed**. It prints the URL and offers to open Dropz in your default browser. It does **not** restart the reMarkable UI. There is no need to rebuild hashtab: this update changes no QML mods.
+
+The installer backs up first. Before it changes an existing install, the tablet script creates a private `/home/root/dropz-backup-<date>-<random>/`. If that backup fails, the update stops. Comics in `/home/root/comics` stay out of the backup. An existing PIN hash is kept. A leftover ComicDrop directory is preserved, and its PIN hash is copied only when Dropz has none. A Dropz or ComicDrop unit file is stopped, disabled and removed only when that file is still present. No new unit is written.
+
+An existing Dropz-owned **Dropz.url** shortcut on the Desktop is updated in place to the new address. A shortcut Dropz already owns is not saved again as `Dropz (1).url`. An unrelated file of that name is left as it is, and a numbered name is used for the new shortcut. The previous Dropz shortcut is backed up in the local user cache under `Dropz/shortcut-backups`. If an older `Dropz (1).url` is still on the Desktop, check that it is the old link and delete it by hand. The installer never deletes older Desktop shortcuts.
 
 ### Manual install
 
+`Dropz-1.1-Setup.zip` includes a `manual` folder with the same payload as the Windows installer: `dropz`, `install.sh`, `uninstall.sh`, `start.sh`, `stop.sh`, `dropz-post-start.sh` and `README.md`. From the folder you unzipped, copy `manual` to a **new** staging directory under `/home/root`. The script then copies the payload into `/home/root/dropz`. Run `install.sh` from the staging directory.
+
 ```sh
-scp -r dropz-1.0 root@TABLET_IP:/home/root/dropz-src
+scp -r manual root@TABLET_IP:/home/root/dropz-1.1-src
 ssh root@TABLET_IP
-sh /home/root/dropz-src/install.sh
+sh /home/root/dropz-1.1-src/install.sh
 ```
+
+`DROPZ_ENABLE=0` omits the XOVI hook. When `DROPZ_PIN` is unset, an existing PIN is kept. Leave the staging directory in place until the install has succeeded.
 
 ### After install
 
@@ -120,25 +131,35 @@ Open:
 http://<tablet-wifi-ip>:8080/
 ```
 
-Find the tablet's Wi-Fi address under **Settings > General > Help > About**, or use the address the installer printed. If new comics do not appear in FourColour straight away, close the app and open it again.
+Find the tablet's Wi-Fi address under **Settings > General > Help > About**, or use the address the installer printed. The page is plain HTTP on a trusted local network. If new comics do not appear in FourColour straight away, close the app and open it again.
 
-### After an OS update or reinstall
+### After a reboot or an OS update
 
-A reMarkable OS update or reinstall can remove Dropz's systemd startup registration and still leave `/home/root/dropz` and the comics in `/home/root/comics` on the tablet. The unit file is `/etc/systemd/system/dropz.service`. Automatic startup links that unit to `multi-user.target`, which systemd reaches when the tablet does a full boot. The registration sits apart from the Dropz files and from the comics. The steps below are the behaviour of the Dropz 1.0 `install.sh`, and they match one verified recovery. A later update can remove different files.
+Dropz 1.0's recovery was to run `install.sh` again and answer yes to automatic boot startup. That wrote `/etc/systemd/system/dropz.service` once more and enabled it for `multi-user.target`. The Paper Pro wipes that system folder on reboot, so the unit disappeared again and Dropz stopped. `/home/root/dropz` and the comics in `/home/root/comics` could remain. Dropz 1.1 does not restore that unit.
 
-`install.sh` is kept on the tablet at `/home/root/dropz/install.sh`. Root's home is `/home/root`, so that directory is `~/dropz`. The script is safe to run again from there. It creates `/home/root/dropz-backup-<YYYYMMDD-HHMMSS>/`. When `/home/root/dropz` is already present, that directory is archived inside the backup as `dropz.tar.gz`, and the unit and manifest are copied too when they are still on disk. The comics library is left out of the backup. Comics in `/home/root/comics` stay as they are. The script creates `/home/root/comics` only when that folder is missing. An existing PIN hash at `/home/root/dropz/pin.hash` stays in place.
+The files that have to persist stay under `/home/root`. `/home/root/dropz/start.sh` is safe to run again: if anything is already listening on port **8080**, it starts nothing further. The hook `/home/root/xovi/scripts/post-start/90-dropz.sh` backgrounds `start.sh`, returns success immediately, and uses a 15-second timeout when `timeout` is available. Without `timeout`, `start.sh` still uses a short run of retries and one-second HTTP checks. Nothing in the hook creates a systemd service.
 
-In the verified case, running the script and answering yes to automatic boot startup restored the service. SSH to the tablet as `root` and run:
+This is automatic start after XOVI starts. After a reboot, start XOVI with reManager in the usual way. If that XOVI runs its post-start scripts, Dropz starts then. The installer also starts Dropz straight away, without restarting the UI. A UI restart — AppLoad **Reload**, or restarting the UI with mods — restarts the on-screen interface only. It is not what brings Dropz back. [XOVI's start script](https://github.com/asivery/rm-xovi-extensions/blob/master/xovi-setup/start) runs each `post-start` script after it restarts XOVI's services. The [XOVI README](https://github.com/asivery/rm-xovi-extensions/blob/master/README.MD) warns against unattended XOVI boot autostart on an encrypted tablet. A finished install does not by itself prove that one reManager build invokes the hook after a reboot.
+
+If the page does not open a few seconds after XOVI has started, the fallback is one command. SSH to the tablet as `root` and run:
 
 ```sh
-cd ~/dropz && sh install.sh
+/home/root/dropz/start.sh
 ```
 
-If the firmware is outside the `3.28` series, the script prints a note that it was built with `3.28.x` in mind and waits. Press Enter to continue, or Ctrl-C to stop. The pause is a warning from this installer. It is not a test of the newer OS.
+To see whether the hook directory is present:
 
-The script then asks `Start Dropz automatically at boot? [Y/n]:`. Answer `yes`. The default shown on the prompt is yes: Enter, `y` and `yes` all enable startup. `n` and `no` leave the service disabled. With startup enabled, the script writes the unit again, runs `systemctl enable dropz.service`, and asks systemd to restart the service, or to start it if restart does not succeed.
+```sh
+ls /home/root/xovi/scripts
+```
 
-That start happens at once, so the page can be opened without rebooting the tablet. The installer does not restart the reMarkable UI. A UI restart — AppLoad **Reload**, or restarting the UI with mods — restarts the on-screen interface only. It does not restore the systemd unit. A full reboot is the tablet starting up again. On that boot, `multi-user.target` starts an enabled Dropz service.
+Look for `post-start`. To see whether the installed XOVI start script mentions that directory:
+
+```sh
+grep -n post-start /home/root/xovi/start
+```
+
+The directory can be present when reManager still does not run it. The check that matters is a reboot, starting XOVI as usual, then opening Dropz. If the hook is not honoured, use `/home/root/dropz/start.sh`. Leave XOVI's startup files and the system mounts as they are.
 
 From a PC or phone on the same Wi-Fi, open port **8080** on the tablet's current Wi-Fi address:
 
@@ -146,14 +167,25 @@ From a PC or phone on the same Wi-Fi, open port **8080** on the tablet's current
 http://<tablet-wifi-ip>:8080/
 ```
 
-Read the address under **Settings > General > Help > About**, or use the address the script prints. The script reads that address from `wlan0` when the interface has one. After the tablet rejoins Wi-Fi, read the address again and use the one it has now.
+Read the address under **Settings > General > Help > About**. After the tablet rejoins Wi-Fi, read the address again and use the one it has now.
+
+An update still goes through `install.sh`, kept on the tablet at `/home/root/dropz/install.sh`. Root's home is `/home/root`, so that directory is `~/dropz`. The script backs up first to `/home/root/dropz-backup-<date>-<random>/`. When `/home/root/dropz` is already present, that directory is archived inside the backup. Comics stay in `/home/root/comics`. The script creates that folder only when it is missing. An existing `/home/root/dropz/pin.hash` stays in place unless a new PIN is supplied.
 
 ### Turn Dropz off or on
 
+Stop Dropz for this session. The next XOVI post-start still runs:
+
 ```sh
-ssh root@TABLET_IP "systemctl stop dropz && systemctl disable dropz"
-ssh root@TABLET_IP "systemctl enable --now dropz"
+ssh root@TABLET_IP "/home/root/dropz/stop.sh"
 ```
+
+Start it again. Repeating the command is safe:
+
+```sh
+ssh root@TABLET_IP "/home/root/dropz/start.sh"
+```
+
+`stop.sh` stops only a process whose executable is `/home/root/dropz/dropz`. To turn the hook off, run setup option **1** again and answer **No** to automatic start after XOVI. The server still starts for that session. To confirm the running server is Dropz 1.1, run `/home/root/dropz/dropz -check`. Recent output is `/home/root/dropz/dropz.log`. The helper's usual flags are `-listen :8080 -comics /home/root/comics -pin-file /home/root/dropz/pin.hash`.
 
 ### Uninstall Dropz
 
@@ -163,7 +195,7 @@ Use option **2** in the Windows installer, or:
 sh /home/root/dropz/uninstall.sh
 ```
 
-Your comics stay in `/home/root/comics`. The UI is not restarted.
+A fresh backup is made before anything is removed. Dropz is stopped. Its named program files, `start.sh`, `stop.sh` and an unmodified hook that Dropz owns are removed. Comics, the PIN hash, logs, unknown files and backups are kept. A hook that has been edited is backed up and left in place, with a warning. Without `start.sh` that hook cannot launch Dropz. The UI is not restarted.
 
 You can still copy comics with `scp` or WinSCP as before; Dropz is optional.
 
