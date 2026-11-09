@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" alt="FourColour icon: a white-bordered square with a red panel across the top, a blue panel at the bottom left and a yellow panel at the bottom right" width="128" height="128">
 
-FourColour is Nick Greenfield's comic-book reader for the reMarkable Paper Pro (colour e-ink). It runs as an [AppLoad](https://github.com/asivery/rm-appload) app under [XOVI](https://github.com/asivery/rm-xovi-extensions). This repository is version 1.5.2. AppLoad shows the name **FourColour**. The app id, and the folder on the tablet, stay `rm-comics` (`/home/root/xovi/exthome/appload/rm-comics/`). See [CHANGELOG.md](CHANGELOG.md).
+FourColour is Nick Greenfield's comic-book reader for the reMarkable Paper Pro (colour e-ink). It runs as an [AppLoad](https://github.com/asivery/rm-appload) app under [XOVI](https://github.com/asivery/rm-xovi-extensions). This repository is version 1.5.2. AppLoad shows the name **FourColour**. The app id, and the folder on the tablet, stay `rm-comics` (`/home/root/xovi/exthome/appload/rm-comics/`). See [CHANGELOG.md](CHANGELOG.md). The easiest way to install it is [Vellum](https://github.com/vellum-dev/vellum): `vellum add fourcolour`.
 
 Comics live in `/home/root/comics/` on the tablet and are copied from a PC with `scp`. The screen is QML (`app/ui/main.qml`), packed into `resources.rcc` from `app/application.qrc`. A Rust program (`app/backend`) is installed as the static binary `backend/entry`: it lists the library, opens the archives and stores the page you were on. The Windows installer in `installer/` asks for the tablet's IP address and the `root` password. The password is masked as you type. The installer uploads the app over SSH, using SFTP when the tablet offers it. The executable is unsigned, so SmartScreen shows **More info**, then **Run anyway**. The installer leaves the UI restart to you: reload AppLoad, or restart the UI with mods (for example with reManager).
 
@@ -26,10 +26,42 @@ Saved pages are a JSON map at `/home/root/.local/share/rm-comics/progress.json`.
 ## Requirements
 
 - A reMarkable Paper Pro, with developer mode on.
-- [XOVI](https://github.com/asivery/rm-xovi-extensions) and [AppLoad](https://github.com/asivery/rm-appload), already installed and working.
-- A Windows 10 or Windows 11 PC on the same Wi-Fi network as the tablet. Over USB, the installer's default address `10.11.99.1` works instead.
+- [XOVI](https://github.com/asivery/rm-xovi-extensions) and [AppLoad](https://github.com/asivery/rm-appload), already installed and working. The Vellum package depends on AppLoad.
+- For a Vellum install, [Vellum](https://github.com/vellum-dev/vellum-cli) on the tablet.
+- For the Windows installer, a Windows 10 or Windows 11 PC on the same Wi-Fi network as the tablet. Over USB, the installer's default address `10.11.99.1` works instead.
 
 ## Installation
+
+### Install with Vellum
+
+This is the recommended way to install FourColour, and the easiest. Version 1.5.2 is in the official [Vellum](https://github.com/vellum-dev/vellum) package repository ([pull request 390](https://github.com/vellum-dev/vellum/pull/390), merged on 8 November 2026). It is listed on the [package index](https://vellum.delivery/) as `fourcolour` 1.5.2.
+
+Install [Vellum](https://github.com/vellum-dev/vellum-cli) on the tablet first. SSH in as `root` and run:
+
+```sh
+vellum add fourcolour
+```
+
+The package depends on AppLoad. It installs the app in `/home/root/xovi/exthome/appload/rm-comics/` and creates `/home/root/comics` if that folder is missing. Comics already there, and saved pages, stay. Open AppLoad and tap **Reload**. If FourColour does not appear, restart the UI with mods, for example with reManager. The package leaves that restart to you.
+
+To update FourColour, refresh the package index and then upgrade installed packages:
+
+```sh
+vellum update
+vellum upgrade
+```
+
+`vellum update` refreshes the package index. `vellum upgrade` upgrades the packages already installed. Reload AppLoad afterwards, or restart the UI with mods.
+
+To remove the app:
+
+```sh
+vellum del fourcolour
+```
+
+`vellum del` removes the package and keeps its data. Comics, saved pages and the page cache stay. `vellum purge fourcolour` also deletes the saved pages in `/home/root/.local/share/rm-comics` and the cache in `/home/root/.cache/rm-comics`. Comics in `/home/root/comics` stay with either command. Reload AppLoad, or restart the UI with mods, so the icon goes.
+
+### Windows installer
 
 1. Download `FourColour_v1.5.2_installer.zip` from the [Releases](https://github.com/nickgeenfield/FourColour/releases) page and extract it. The program is `FourColour-Installer.exe`. A short `README.txt` sits beside it.
 2. Windows SmartScreen may warn that it does not recognise the app. Choose **More info**, then **Run anyway**.
@@ -222,6 +254,8 @@ If the helper is slow to start, the library asks again about every 1.5 seconds a
 
 ## Updating
 
+When FourColour was installed with Vellum, SSH to the tablet as `root` and run `vellum update`, then `vellum upgrade`. `vellum update` refreshes the package index. `vellum upgrade` upgrades the packages already installed. Comics in `/home/root/comics` and saved pages in `/home/root/.local/share/rm-comics` are left alone. Then reload AppLoad, or restart the UI with mods. See [Install with Vellum](#install-with-vellum).
+
 Run the installer again and choose **1**. That replaces `manifest.json`, `resources.rcc`, `icon.png` and `backend/entry` under `/home/root/xovi/exthome/appload/rm-comics/`. Comics in `/home/root/comics` and saved pages in `/home/root/.local/share/rm-comics` are left alone. Then reload AppLoad, or restart the UI with mods. The installer does not do that restart.
 
 `scripts/update_rm_comics.bat` is the USB copy script. Close FourColour first and plug the tablet in. The script looks for `app\resources.rcc` and `app\backend\entry` next to itself, or in `C:\rm_comics\app`. It copies those two files to `root@10.11.99.1`, moves them into the AppLoad folder, marks `backend/entry` executable, and runs `--selftest`. It asks for the SSH password twice (once for `scp`, once for `ssh`); the password is not shown. It does not copy `manifest.json` or `icon.png`, and its on-screen text still says "Comics", which is the earlier name. When it says "Done", restart the UI with mods in reManager, or reload AppLoad.
@@ -229,6 +263,8 @@ Run the installer again and choose **1**. That replaces `manifest.json`, `resour
 A finished install prints "FourColour 1.5.2 is installed." The library bar shows **v1.5.2**. `--selftest` prints `ok`.
 
 ## Uninstalling
+
+When FourColour was installed with Vellum, SSH to the tablet as `root` and run `vellum del fourcolour`. That removes the app and keeps comics, saved pages and the cache. `vellum purge fourcolour` also deletes saved pages and the cache. Comics in `/home/root/comics` stay either way. Then reload AppLoad, or restart the UI with mods, so the icon goes. See [Install with Vellum](#install-with-vellum).
 
 Run the installer and choose **2**.
 
@@ -260,7 +296,7 @@ Restart the UI with mods (for example with reManager) so AppLoad drops the icon.
 
 ## Building from source
 
-The release executable is the supported way to install. To build it yourself, produce `resources.rcc` and `backend/entry` first. Those steps are in [installer/payload/README.md](installer/payload/README.md): Qt 6 `rcc --binary` for the QML, and `cargo zigbuild --release --target aarch64-unknown-linux-musl` for the Rust backend. `manifest.json` and `icon.png` are already in `installer/payload/`.
+Vellum and the release executable are the supported ways to install. To build it yourself, produce `resources.rcc` and `backend/entry` first. Those steps are in [installer/payload/README.md](installer/payload/README.md): Qt 6 `rcc --binary` for the QML, and `cargo zigbuild --release --target aarch64-unknown-linux-musl` for the Rust backend. `manifest.json` and `icon.png` are already in `installer/payload/`.
 
 `go.mod` is inside `installer/` and asks for Go 1.27.3. From the repository root, after the payload is in place (placeholders are enough to compile), build the Windows installer with:
 
